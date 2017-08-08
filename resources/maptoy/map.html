@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zoomify</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.2.0/css/ol.css" type="text/css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="https://openlayers.org/en/v4.2.0/build/ol.js"></script>
+</head>
+<body>
+<div id="map" class="map"></div>
+<div id="mouse-position">
+    <div id="mouse-position1"></div>
+    <div id="mouse-position2"></div>
+</div>
+
+<style>
+    body {
+        overflow: hidden;
+    }
+    #mouse-position {
+        position: absolute;
+        bottom: 8px;
+        left: 16px;
+
+    }
+</style>
+<script>
+
+
+    var infos = [
+
+        {
+            id: "nla.obj-324226793",
+            name: "Moruya",
+            year: 1943,
+            imageWidth: 9780,
+            imageHeight: 14998,
+            imageBounds: [655, -1055, 9095, -11402],
+            referenceBounds: [150, -35.75, 150.25, -36]
+        },
+        {
+            id: "nla.obj-324226684",
+            name: "Jervis Bay",
+            year: 1931,
+            imageWidth: 18609,
+            imageHeight: 13420,
+            imageBounds: [716, -992, 17633, -11249],
+            referenceBounds: [150.5, -35.0, 151.0, -35.25]
+        },
+        {
+            id: "nla.obj-446357502",
+            name: "Nowra",
+            year: 1931,
+            imageWidth: 18576,
+            imageHeight: 13060,
+            imageBounds: [703, -928, 17700, -11274],
+            referenceBounds: [150.5, -34.75, 151.0, -35.0]
+        },
+        {
+            id: "nla.obj-446357854",
+            name: "Kiama",
+            year: 1932,
+            imageWidth: 21780,
+            imageHeight: 14935,
+            imageBounds: [2697, -1625, 19709, -12002],
+            referenceBounds: [150.5, -34.50, 151.0, -34.75]
+        },
+        {
+            id: "nla.obj-324030532",
+            name: "Wollongong",
+            year: 1942,
+            imageWidth: 18534,
+            imageHeight: 14028,
+            imageBounds: [683, -1100, 17826, -11370],
+            referenceBounds: [150.5, -34.25, 151.0, -34.5]
+        }
+    ];
+
+
+    var layers = [
+        new ol.layer.Tile({source: new ol.source.OSM()}),
+    ];
+
+    infos.forEach(function (info, i) {
+
+        var extent = [0, -info.imageHeight, info.imageWidth, 0];
+
+        var proj = new ol.proj.Projection({
+            code: "CUSTOM" + i,
+            units: 'pixels',
+            extent: extent
+        });
+
+        var imgX = info.imageBounds[0];
+        var imgY = info.imageBounds[1];
+        var refX = info.referenceBounds[0];
+        var refY = info.referenceBounds[1];
+        var xScale = (info.referenceBounds[2] - info.referenceBounds[0]) / (info.imageBounds[2] - info.imageBounds[0]);
+        var yScale = (info.referenceBounds[3] - info.referenceBounds[1]) / (info.imageBounds[3] - info.imageBounds[1]);
+        var invXScale = 1.0 / xScale;
+        var invYScale = 1. / yScale;
+
+        ol.proj.addProjection(proj);
+        ol.proj.addCoordinateTransforms("CUSTOM" + i, 'EPSG:4326',
+            function (coord) {
+                return [xScale * (coord[0] - imgX) + refX, yScale * (coord[1] - imgY) + refY]
+            },
+            function (coord) {
+                return [invXScale * (coord[0] - refX) + imgX, invYScale * (coord[1] - refY) + imgY]
+            }
+        );
+
+        var zoomify = new ol.source.Zoomify({
+            projection: proj,
+            url: '/map/' + info.id + '/zoomify/',
+            size: [info.imageWidth, info.imageHeight],
+            crossOrigin: 'anonymous',
+            attributions: [
+                new ol.Attribution({
+                    html: '<a href="http://nla.gov.au/nla.obj-' + info.id + '">' + info.name + '</a> (' + info.year + ').'
+                }),
+            ]
+        });
+
+        var tile = new ol.layer.Tile({
+            source: zoomify,
+            extent: [info.referenceBounds[0], info.referenceBounds[3],
+                     info.referenceBounds[2], info.referenceBounds[1]],
+
+        });
+
+        tile.setOpacity(1.0);
+
+        window.mouseProjection = proj;
+
+        layers.push(tile);
+
+        console.log("added " + info.id);
+
+    });
+
+    var vectorLayer = new ol.layer.Vector({
+        source: new ol.source.Vector({
+            url: 'https://openlayers.org/en/v4.2.0/examples/data/geojson/countries.geojson',
+            format: new ol.format.GeoJSON(),
+
+        })
+    });
+
+
+    var mousePositionControl = new ol.control.MousePosition({
+        coordinateFormat: ol.coordinate.createStringXY(4),
+        //projection: window.mouseProjection,
+        className: 'custom-mouse-position',
+        target: document.getElementById('mouse-position1'),
+        undefinedHTML: '&nbsp;'
+    });
+
+    var mousePositionControl2 = new ol.control.MousePosition({
+        coordinateFormat: ol.coordinate.createStringXY(4),
+        projection: window.mouseProjection,
+        className: 'custom-mouse-position',
+        target: document.getElementById('mouse-position2'),
+        undefinedHTML: '&nbsp;'
+    });
+
+
+    var map = new ol.Map({
+        controls: ol.control.defaults().extend([mousePositionControl, mousePositionControl2]),
+        layers: layers,
+        target: 'map',
+        view: new ol.View({
+            // adjust zoom levels to those provided by the source
+            //resolutions: source.getTileGrid().getResolutions(),
+            // constrain the center: center cannot be set outside this extent
+            center: [(infos[2].referenceBounds[0] + infos[2].referenceBounds[2]) / 2,
+                     (infos[2].referenceBounds[1] + infos[2].referenceBounds[3]) / 2],
+            zoom: 9,
+            //projection: proj,
+            projection: 'EPSG:4326',
+
+
+        })
+    });
+    //map.getView().fit(extent);
+</script>
+</body>
+</html>
