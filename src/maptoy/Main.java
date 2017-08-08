@@ -90,7 +90,6 @@ public class Main {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            String objId = checkObjId(req.params(":id"));
             return mapHtml;
         });
 
