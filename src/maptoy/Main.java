@@ -50,7 +50,7 @@ public class Main {
 
         Pattern RE_TILE = Pattern.compile("(\\d+)-(\\d+)-(\\d+)\\.jpg");
 
-        Spark.get("/map/:id/zoomify/:tilegroup/:tile", (req, res) -> {
+        Spark.get("/maptoy/:id/zoomify/:tilegroup/:tile", (req, res) -> {
             String objId = checkObjId(req.params(":id"));
             Matcher m = RE_TILE.matcher(req.params(":tile"));
             if (!m.matches()) {
@@ -84,6 +84,11 @@ public class Main {
         });
 
         Spark.get("/", (req, res) -> {
+            res.redirect("/maptoy");
+            return "";
+        });
+        
+        Spark.get("/maptoy", (req, res) -> {
             String mapHtml;
             try (InputStream stream = Main.class.getResourceAsStream("map.html")) {
                 mapHtml = new Scanner(stream).useDelimiter("\\Z").next();
