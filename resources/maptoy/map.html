@@ -113,7 +113,7 @@
 
         var zoomify = new ol.source.Zoomify({
             projection: proj,
-            url: '/map/' + info.id + '/zoomify/',
+            url: info.id + '/zoomify/',
             size: [info.imageWidth, info.imageHeight],
             crossOrigin: 'anonymous',
             attributions: [

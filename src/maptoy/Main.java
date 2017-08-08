@@ -84,11 +84,15 @@ public class Main {
         });
 
         Spark.get("/", (req, res) -> {
-            res.redirect("/maptoy");
+            res.redirect("/maptoy/");
             return "";
         });
-        
         Spark.get("/maptoy", (req, res) -> {
+            res.redirect("/maptoy/");
+            return "";
+        });
+
+        Spark.get("/maptoy/", (req, res) -> {
             String mapHtml;
             try (InputStream stream = Main.class.getResourceAsStream("map.html")) {
                 mapHtml = new Scanner(stream).useDelimiter("\\Z").next();
