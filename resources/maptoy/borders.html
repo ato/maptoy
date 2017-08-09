@@ -16,12 +16,15 @@
     <div id="botedge">
         <img id="botimg">
     </div>
+    <div id="legend">
+        <img src="http://nla.gov.au/nla.obj-324226684/image?RGN=0.016,0.864,1.0,0.12&HEI=600" height="300px">
+    </div>
 </div>
-<div id="mouse-position">
-    <div id="mouse-position1"></div>
-    <div id="mouse-position2"></div>
-</div>
+
 <style>
+    body {
+        overflow: hidden;
+    }
     #mouse-position {
         position: absolute;
         bottom: 8px;
@@ -32,13 +35,27 @@
     #topedge {
         height: 100px;
         padding-left: 5px;
+        width: 100%;
+        overflow: hidden;
     }
 
     #botedge {
         height: 100px;
         position: absolute;
-        bottom: 0px;
+        bottom: 200px;
         max-height: 200px;
+        overflow: hidden;
+    }
+
+
+    #legend {
+        height: 200px;
+        position: absolute;
+        left: 0px;
+        bottom: 0px;
+        right: 0px;
+        overflow-x: scroll;
+        overflow-y: scroll;
     }
 </style>
 <script>
@@ -121,28 +138,12 @@
 
     });
 
-    var mousePositionControl = new ol.control.MousePosition({
-        coordinateFormat: ol.coordinate.createStringXY(4),
-        //projection: window.mouseProjection,
-        className: 'custom-mouse-position',
-        target: document.getElementById('mouse-position1'),
-        undefinedHTML: '&nbsp;'
-    });
-
-    var mousePositionControl2 = new ol.control.MousePosition({
-        coordinateFormat: ol.coordinate.createStringXY(4),
-        projection: pixelProj,
-        className: 'custom-mouse-position',
-        target: document.getElementById('mouse-position2'),
-        undefinedHTML: '&nbsp;'
-    });
 
 
     var halfw = (infos[0].referenceBounds[0] - infos[0].referenceBounds[2]) / 2;
     var halfh = (infos[0].referenceBounds[0] - infos[0].referenceBounds[2]) / 2;
 
     var map = new ol.Map({
-        controls: ol.control.defaults().extend([mousePositionControl, mousePositionControl2]),
         layers: layers,
         target: 'map',
         view: new ol.View({
@@ -201,10 +202,10 @@
         document.getElementById("topimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + ",0.05," + wrgn + ",0.0245&HEI=" + height;
 
 
-        var barpct = 0.165;
+        var barpct = 0.025;
         height = (scale * mapinfo.imageHeight * barpct);
         document.getElementById("botedge").style.height = height + "px";
-        document.getElementById("botimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + "," + (1.0 - barpct) + "," + wrgn + "," + barpct + "&HEI=" + height;
+        document.getElementById("botimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + "," + (1.0 - 0.165) + "," + wrgn + "," + barpct + "&HEI=" + height;
 
     }
 
