@@ -104,7 +104,7 @@ public class Main {
 
         Spark.get("/maptoy/borders", (req, res) -> {
             String mapHtml;
-            try (InputStream stream = new FileInputStream("/home/aosborne/src/maptoy/resources/maptoy/borders.html")){ //Main.class.getResourceAsStream("borders.html")) {
+            try (InputStream stream = Main.class.getResourceAsStream("borders.html")) {
                 mapHtml = new Scanner(stream).useDelimiter("\\Z").next();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
