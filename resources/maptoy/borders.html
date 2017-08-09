@@ -23,7 +23,10 @@
 
 <style>
     body {
+        margin: 0;
+        padding:0;
         overflow: hidden;
+        background: #909090;
     }
     #mouse-position {
         position: absolute;
@@ -34,7 +37,6 @@
 
     #topedge {
         height: 100px;
-        padding-left: 5px;
         width: 100%;
         overflow: hidden;
     }
@@ -196,16 +198,16 @@
             document.getElementById("botedge").style['margin-left'] = 0;
         }
         //console.log(0.0245 * mapinfo.imageHeight * map.getView)
-        var height = (scale * mapinfo.imageHeight * 0.0245);
+        var height = (scale * mapinfo.imageHeight * 0.0230);
 
         document.getElementById("topedge").style.height = height + "px";
-        document.getElementById("topimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + ",0.05," + wrgn + ",0.0245&HEI=" + height;
+        document.getElementById("topimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + ",0.05," + wrgn + ",0.0230&HEI=" + height;
 
 
         var barpct = 0.025;
         height = (scale * mapinfo.imageHeight * barpct);
         document.getElementById("botedge").style.height = height + "px";
-        document.getElementById("botimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + "," + (1.0 - 0.165) + "," + wrgn + "," + barpct + "&HEI=" + height;
+        document.getElementById("botimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + "," + (1.0 - 0.160) + "," + wrgn + "," + barpct + "&HEI=" + height;
 
     }
 
