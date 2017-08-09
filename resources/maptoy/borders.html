@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zoomify</title>
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.2.0/css/ol.css" type="text/css">
+    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
+    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
+    <script src="https://openlayers.org/en/v4.2.0/build/ol.js"></script>
+</head>
+<body>
+<div id="container">
+    <div id="topedge">
+        <img id="topimg">
+    </div>
+    <div id="map" class="map"></div>
+    <div id="botedge">
+        <img id="botimg">
+    </div>
+</div>
+<div id="mouse-position">
+    <div id="mouse-position1"></div>
+    <div id="mouse-position2"></div>
+</div>
+<style>
+    #mouse-position {
+        position: absolute;
+        bottom: 8px;
+        left: 16px;
+
+    }
+
+    #topedge {
+        height: 100px;
+        padding-left: 5px;
+    }
+
+    #botedge {
+        height: 100px;
+        position: absolute;
+        bottom: 0px;
+        max-height: 200px;
+    }
+</style>
+<script>
+
+
+    var infos = [
+        {
+            id: "nla.obj-324226684",
+            name: "Jervis Bay",
+            year: 1931,
+            imageWidth: 18609,
+            imageHeight: 13420,
+            imageBounds: [716, -992, 17633, -11249],
+            referenceBounds: [150.5, -35.0, 151.0, -35.25]
+        },
+    ];
+
+    var mapinfo = infos[0];
+
+
+    var layers = [
+//        new ol.layer.Tile({source: new ol.source.OSM()}),
+    ];
+
+    infos.forEach(function (info, i) {
+
+        var extent = [0, -info.imageHeight, info.imageWidth, 0];
+
+        var proj = new ol.proj.Projection({
+            code: "CUSTOM" + i,
+            units: 'pixels',
+            extent: extent
+        });
+
+        var imgX = info.imageBounds[0];
+        var imgY = info.imageBounds[1];
+        var refX = info.referenceBounds[0];
+        var refY = info.referenceBounds[1];
+        var xScale = (info.referenceBounds[2] - info.referenceBounds[0]) / (info.imageBounds[2] - info.imageBounds[0]);
+        var yScale = (info.referenceBounds[3] - info.referenceBounds[1]) / (info.imageBounds[3] - info.imageBounds[1]);
+        var invXScale = 1.0 / xScale;
+        var invYScale = 1. / yScale;
+
+        ol.proj.addProjection(proj);
+        ol.proj.addCoordinateTransforms("CUSTOM" + i, 'EPSG:4326',
+            function (coord) {
+                return [xScale * (coord[0] - imgX) + refX, yScale * (coord[1] - imgY) + refY]
+            },
+            function (coord) {
+                return [invXScale * (coord[0] - refX) + imgX, invYScale * (coord[1] - refY) + imgY]
+            }
+        );
+
+        var zoomify = new ol.source.Zoomify({
+            projection: proj,
+            url: info.id + '/zoomify/',
+            size: [info.imageWidth, info.imageHeight],
+            crossOrigin: 'anonymous',
+            attributions: [
+                new ol.Attribution({
+                    html: '<a href="http://nla.gov.au/' + info.id + '">' + info.name + '</a> (' + info.year + ').'
+                }),
+            ]
+        });
+
+        var tile = new ol.layer.Tile({
+            source: zoomify,
+            extent: [info.referenceBounds[0], info.referenceBounds[3],
+                     info.referenceBounds[2], info.referenceBounds[1]],
+
+        });
+
+        tile.setOpacity(1.0);
+
+        window.pixelProj = proj;
+
+        layers.push(tile);
+
+        console.log("added " + info.id);
+
+    });
+
+    var mousePositionControl = new ol.control.MousePosition({
+        coordinateFormat: ol.coordinate.createStringXY(4),
+        //projection: window.mouseProjection,
+        className: 'custom-mouse-position',
+        target: document.getElementById('mouse-position1'),
+        undefinedHTML: '&nbsp;'
+    });
+
+    var mousePositionControl2 = new ol.control.MousePosition({
+        coordinateFormat: ol.coordinate.createStringXY(4),
+        projection: pixelProj,
+        className: 'custom-mouse-position',
+        target: document.getElementById('mouse-position2'),
+        undefinedHTML: '&nbsp;'
+    });
+
+
+    var halfw = (infos[0].referenceBounds[0] - infos[0].referenceBounds[2]) / 2;
+    var halfh = (infos[0].referenceBounds[0] - infos[0].referenceBounds[2]) / 2;
+
+    var map = new ol.Map({
+        controls: ol.control.defaults().extend([mousePositionControl, mousePositionControl2]),
+        layers: layers,
+        target: 'map',
+        view: new ol.View({
+            // adjust zoom levels to those provided by the source
+            //resolutions: source.getTileGrid().getResolutions(),
+            // constrain the center: center cannot be set outside this extent
+            extent:  [mapinfo.referenceBounds[0],
+                mapinfo.referenceBounds[3],
+                mapinfo.referenceBounds[2],
+                mapinfo.referenceBounds[1]],
+
+            center: [(infos[0].referenceBounds[0] + infos[0].referenceBounds[2]) / 2,
+                     (infos[0].referenceBounds[1] + infos[0].referenceBounds[3]) / 2],
+            zoom: 12,
+            //projection: proj,
+            projection: 'EPSG:4326',
+            rotation: -Math.PI * 0.001,
+
+
+        })
+    });
+
+    function display(id, value) {
+        document.getElementById(id).value = value.toFixed(2);
+    }
+
+    function onMoveEnd(evt) {
+        var map = evt.map;
+        var zoom = map.getView().getZoom();
+        var extent = map.getView().calculateExtent(map.getSize());
+        var topLeft = ol.proj.transform(ol.extent.getTopLeft(extent),
+            'EPSG:4326', pixelProj);
+        var topRight = ol.proj.transform(ol.extent.getTopRight(extent),
+            'EPSG:4326', pixelProj);
+
+
+
+        var xrgn = topLeft[0] / mapinfo.imageWidth;
+        var xrgn2 = topRight[0] / mapinfo.imageWidth;
+        var wrgn = xrgn2 - xrgn;
+
+
+
+        var scale = map.getViewport().offsetWidth / (topRight[0] - topLeft[0]);
+        if (topLeft[0] < 0) {
+            document.getElementById("topedge").style['margin-left'] = (-topLeft[0]) * scale + "px";
+            document.getElementById("botedge").style['margin-left'] = (-topLeft[0]) * scale + "px";
+        } else {
+            document.getElementById("topedge").style['margin-left'] = 0;
+            document.getElementById("botedge").style['margin-left'] = 0;
+        }
+        //console.log(0.0245 * mapinfo.imageHeight * map.getView)
+        var height = (scale * mapinfo.imageHeight * 0.0245);
+
+        document.getElementById("topedge").style.height = height + "px";
+        document.getElementById("topimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + ",0.05," + wrgn + ",0.0245&HEI=" + height;
+
+
+        var barpct = 0.165;
+        height = (scale * mapinfo.imageHeight * barpct);
+        document.getElementById("botedge").style.height = height + "px";
+        document.getElementById("botimg").src = "http://nla.gov.au/nla.obj-324226684/image?RGN=" + xrgn + "," + (1.0 - barpct) + "," + wrgn + "," + barpct + "&HEI=" + height;
+
+    }
+
+    map.on('moveend', onMoveEnd);
+    //map.getView().fit(extent);
+</script>
+</body>
+</html>
